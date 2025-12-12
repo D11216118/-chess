@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>國際象棋規則抽卡</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        #clearBtn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        #clearBtn:hover {
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
+        }
+
+        .card-display {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            min-height: 250px;
+            transition: all 0.3s ease;
+        }
+
+        .card-display.show {
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        #cardTitle {
+            color: #2c3e50;
+            font-size: 2em;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .card-category {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+
+        #cardSummary {
+            color: #34495e;
+            font-size: 1.1em;
+            line-height: 1.8;
+        }
+
+        #cardSummary ul {
+            list-style-position: inside;
+            padding-left: 20px;
+        }
+
+        #cardSummary li {
+            margin-bottom: 10px;
+        }
+
+        .placeholder {
+            text-align: center;
+            color: #95a5a6;
+            font-style: italic;
+            padding: 50px 0;
+        }
+
+        .history-section {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #ecf0f1;
+        }
+
+        .history-section h2 {
+            color: #2c3e50;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        #historyList {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            transition: all 0.2s ease;
+        }
+
+        .history-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .history-item-title {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .history-item-category {
+            font-size: 0.85em;
+            color: #7f8c8d;
+        }
+
+        .error-message {
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            button {
+                padding: 12px 20px;
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>♔ 國際象棋規則抽卡 ♚</h1>
+            <p class="subtitle">按下按鈕抽一張規則卡，學習國際象棋知識！</p>
+        </header>
+
+        <div id="errorMessage" class="error-message"></div>
+
+        <div class="controls">
+            <button id="drawBtn">🎲 抽一張卡</button>
+            <button id="clearBtn">🔄 清除歷史</button>
+        </div>
+
+        <div class="card-display" id="cardDisplay">
+            <div class="placeholder">
+                點擊「抽一張卡」開始學習國際象棋規則
+            </div>
+        </div>
+
+        <div class="history-section">
+            <h2>📜 抽卡歷史</h2>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+    <script>
+        // 卡片資料結構
+        const cards = [
+            // 棋子走法（6張）
+            {
+                id: 1,
+                title: '國王 (King) ♔',
+                category: '棋子走法',
+                summary: [
+                    '國王可以向任意方向（上下左右或斜角）移動一格',
+                    '國王不能移動到會被對方棋子攻擊的位置',
+                    '國王是遊戲中最重要的棋子，被將死即輸掉比賽',
+                    '國王參與特殊走法「王車易位」'
+                ]
+            },
+            {
+                id: 2,
+                title: '皇后 (Queen) ♕',
+                category: '棋子走法',
+                summary: [
+                    '皇后是棋盤上最強大的棋子',
+                    '可以直線移動任意格數（如城堡）',
+                    '可以斜線移動任意格數（如主教）',
+                    '移動路徑上不能有其他棋子阻擋',
+                    '結合了城堡和主教的能力'
+                ]
+            },
+            {
+                id: 3,
+                title: '城堡/車 (Rook) ♖',
+                category: '棋子走法',
+                summary: [
+                    '城堡可以沿著直線（橫向或縱向）移動任意格數',
+                    '移動路徑上不能有其他棋子阻擋',
+                    '開局時位於棋盤的四個角落',
+                    '參與「王車易位」的特殊走法',
+                    '在殘局階段非常強大'
+                ]
+            },
+            {
+                id: 4,
+                title: '主教 (Bishop) ♗',
+                category: '棋子走法',
+                summary: [
+                    '主教只能沿著斜線移動任意格數',
+                    '移動路徑上不能有其他棋子阻擋',
+                    '每個主教永遠只能在同一顏色的格子上移動',
+                    '開局時每方有兩個主教，一個在白格，一個在黑格',
+                    '控制長對角線的主教威力強大'
+                ]
+            },
+            {
+                id: 5,
+                title: '騎士/馬 (Knight) ♘',
+                category: '棋子走法',
+                summary: [
+                    '騎士的移動呈「日」字形或「L」字形',
+                    '向任意方向移動兩格，再垂直移動一格',
+                    '騎士是唯一可以跳過其他棋子的棋子',
+                    '騎士移動後總是落在與起始格顏色相反的格子上',
+                    '在擁擠的局面中特別有用'
+                ]
+            },
+            {
+                id: 6,
+                title: '兵/卒 (Pawn) ♙',
+                category: '棋子走法',
+                summary: [
+                    '兵只能向前移動，不能後退',
+                    '首次移動時可以選擇前進一格或兩格',
+                    '平常只能向前移動一格',
+                    '吃子時只能斜向前方一格吃子',
+                    '到達對方底線時必須升變為皇后、城堡、主教或騎士（通常選皇后）',
+                    '可以執行「吃過路兵」的特殊走法'
+                ]
+            },
+
+            // 特殊規則（4張）
+            {
+                id: 7,
+                title: '王車易位 (Castling)',
+                category: '特殊規則',
+                summary: [
+                    '這是國王和城堡同時移動的特殊走法',
+                    '國王向城堡方向移動兩格，城堡跳到國王的另一側',
+                    '執行條件：國王和該城堡都未曾移動過',
+                    '國王與城堡之間沒有任何棋子',
+                    '國王目前不在被將軍的狀態，且移動路徑和目的地都不被攻擊',
+                    '分為「王翼易位」（短易位）和「后翼易位」（長易位）'
+                ]
+            },
+            {
+                id: 8,
+                title: '吃過路兵 (En Passant)',
+                category: '特殊規則',
+                summary: [
+                    '當對方的兵首次移動兩格，恰好與你的兵並排時',
+                    '你可以在緊接的下一步斜向移動到對方兵後面的格子',
+                    '同時吃掉對方的兵',
+                    '這個機會只在對方剛走完那步時有效',
+                    '如果不立即執行，機會就會消失'
+                ]
+            },
+            {
+                id: 9,
+                title: '兵的升變 (Pawn Promotion)',
+                category: '特殊規則',
+                summary: [
+                    '當兵到達對方的底線（第8橫排或第1橫排）時',
+                    '必須立即升變為皇后、城堡、主教或騎士',
+                    '不能選擇保持為兵或升變為國王',
+                    '通常玩家會選擇升變為皇后（最強的棋子）',
+                    '但有時為了避免逼和或特殊戰術，也可能選擇其他棋子'
+                ]
+            },
+            {
+                id: 10,
+                title: '特殊術語：雙重攻擊與牽制',
+                category: '特殊規則',
+                summary: [
+                    '雙重攻擊：一個棋子同時攻擊對方兩個或更多棋子',
+                    '牽制：攻擊一個棋子，使其不能移動（因為後面有更重要的棋子）',
+                    '閃擊：移動一個棋子，讓後面的棋子產生攻擊',
+                    '這些戰術是國際象棋的核心技巧'
+                ]
+            },
+
+            // 將軍與終局（4張）
+            {
+                id: 11,
+                title: '將軍 (Check)',
+                category: '終局判定',
+                summary: [
+                    '當對方國王被你的棋子攻擊時，稱為「將軍」',
+                    '被將軍的一方必須立即解除將軍狀態',
+                    '解除方式：移動國王、用其他棋子阻擋、或吃掉攻擊的棋子',
+                    '不能執行會讓自己國王陷入被將軍的走法',
+                    '將軍不會立即結束遊戲，只是一種警告狀態'
+                ]
+            },
+            {
+                id: 12,
+                title: '將死 (Checkmate)',
+                category: '終局判定',
+                summary: [
+                    '將死是遊戲的勝利條件',
+                    '當國王被將軍，且無法通過任何合法走法解除將軍',
+                    '被將死的一方立即輸掉比賽',
+                    '將死需要同時滿足：國王被攻擊、無處可逃、無法阻擋、攻擊者無法被吃',
+                    '這是國際象棋的最終目標'
+                ]
+            },
+            {
+                id: 13,
+                title: '逼和/僵局 (Stalemate)',
+                category: '終局判定',
+                summary: [
+                    '當輪到某方行棋時，國王沒有被將軍',
+                    '但該方沒有任何合法的走法可以執行',
+                    '此時遊戲判定為和局（平局）',
+                    '逼和是落後方常用的求和手段',
+                    '領先方要小心不要把對手逼到逼和狀態'
+                ]
+            },
+            {
+                id: 14,
+                title: '和局的其他情況',
+                category: '終局判定',
+                summary: [
+                    '三次重複局面：同一局面重複出現三次（不需連續）',
+                    '五十步規則：連續50步沒有吃子也沒有移動兵',
+                    '雙方同意和局：雙方協商一致同意和棋',
+                    '死局：雙方都沒有足夠的棋子將死對方（如單王對單王）',
+                    '了解和局規則可以幫助你在劣勢時保住半分'
+                ]
+            },
+
+            // 開局與策略（2張）
+            {
+                id: 15,
+                title: '開局基本原則',
+                category: '開局建議',
+                summary: [
+                    '控制中心：用兵和其他棋子控制中央的4個格子（e4, d4, e5, d5）',
+                    '快速出子：盡快讓騎士和主教離開底線，參與戰鬥',
+                    '早日王車易位：保護國王的安全，同時讓城堡參戰',
+                    '不要過早出動皇后：避免被對方棋子追趕而浪費時間',
+                    '每個棋子盡量只移動一次（在開局階段）',
+                    '避免製造弱點：不要隨意推進兵而造成難以防守的弱格'
+                ]
+            },
+            {
+                id: 16,
+                title: '常見錯誤與提醒',
+                category: '開局建議',
+                summary: [
+                    '不要隨便送子：在吃子前要計算清楚得失',
+                    '每步棋都要先檢查對方的威脅',
+                    '注意看對方的上一步棋想做什麼',
+                    '不要只顧進攻而忽略防守',
+                    '學會計算：吃子前要算清楚後續的兌換',
+                    '多做練習題：戰術訓練可以大幅提升棋力'
+                ]
+            }
+        ];
+
+        // 歷史記錄
+        let history = [];
+
+        // DOM 元素
+        const drawBtn = document.getElementById('drawBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const cardDisplay = document.getElementById('cardDisplay');
+        const errorMessage = document.getElementById('errorMessage');
+        const historyList = document.getElementById('historyList');
+
+        // 隨機抽卡函數
+        function drawCard(cardList) {
+            if (!cardList || cardList.length === 0) {
+                return null;
+            }
+            const randomIndex = Math.floor(Math.random() * cardList.length);
+            return cardList[randomIndex];
+        }
+
+        // 渲染卡片
+        function renderCard(card) {
+            if (!card) {
+                showError('目前沒有可抽的卡片');
+                return;
+            }
+
+            hideError();
+
+            let summaryHTML = '';
+            if (Array.isArray(card.summary)) {
+                summaryHTML = '<ul>' + card.summary.map(item => `<li>${item}</li>`).join('') + '</ul>';
+            } else {
+                summaryHTML = `<p>${card.summary}</p>`;
+            }
+
+            cardDisplay.innerHTML = `
+                <div class="card-category">${card.category}</div>
+                <h2 id="cardTitle">${card.title}</h2>
+                <div id="cardSummary">${summaryHTML}</div>
+            `;
+
+            // 添加淡入動畫
+            cardDisplay.classList.remove('show');
+            setTimeout(() => {
+                cardDisplay.classList.add('show');
+            }, 10);
+        }
+
+        // 添加到歷史
+        function addToHistory(card) {
+            if (!card) return;
+
+            history.unshift({
+                ...card,
+                timestamp: new Date().toLocaleTimeString('zh-TW')
+            });
+
+            renderHistory();
+        }
+
+        // 渲染歷史記錄
+        function renderHistory() {
+            if (history.length === 0) {
+                historyList.innerHTML = '<div class="placeholder">尚無抽卡記錄</div>';
+                return;
+            }
+
+            historyList.innerHTML = history.map(item => `
+                <div class="history-item">
+                    <div class="history-item-title">${item.title}</div>
+                    <div class="history-item-category">${item.category} • ${item.timestamp}</div>
+                </div>
+            `).join('');
+        }
+
+        // 清除歷史
+        function clearHistory() {
+            history = [];
+            renderHistory();
+            cardDisplay.innerHTML = '<div class="placeholder">點擊「抽一張卡」開始學習國際象棋規則</div>';
+            hideError();
+        }
+
+        // 顯示錯誤訊息
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+        }
+
+        // 隱藏錯誤訊息
+        function hideError() {
+            errorMessage.classList.remove('show');
+        }
+
+        // 事件監聽器
+        drawBtn.addEventListener('click', () => {
+            const card = drawCard(cards);
+            if (card) {
+                renderCard(card);
+                addToHistory(card);
+            }
+        });
+
+        clearBtn.addEventListener('click', () => {
+            if (confirm('確定要清除所有抽卡記錄嗎？')) {
+                clearHistory();
+            }
+        });
+
+        // 初始化
+        renderHistory();
+
+        // 檢查卡片清單是否為空
+        if (!cards || cards.length === 0) {
+            drawBtn.disabled = true;
+            showError('目前沒有可抽的卡片');
+        }
+    </script>
+</body>
+</html>
